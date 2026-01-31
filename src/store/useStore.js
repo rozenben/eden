@@ -17,53 +17,80 @@ import {
 } from 'firebase/storage'
 import { db, storage } from '../config/firebase'
 
+// Gallery categories
+export const GALLERY_CATEGORIES = {
+  tattoo: { id: 'tattoo', label: 'קעקועים', icon: '🎨' },
+  art: { id: 'art', label: 'אומנות', icon: '🖼️' },
+  merch: { id: 'merch', label: 'מרצ\'נדייז', icon: '👕' }
+}
+
 // Demo data for when Firebase is not configured
 const demoGalleryItems = [
   {
     id: '1',
     title: 'דרקון יפני',
+    category: 'tattoo',
     imageUrl: 'https://images.unsplash.com/photo-1611501275019-9b5cda994e8d?w=400&h=500&fit=crop',
     createdAt: new Date().toISOString()
   },
   {
     id: '2',
     title: 'פרחים גיאומטריים',
+    category: 'tattoo',
     imageUrl: 'https://images.unsplash.com/photo-1590246814883-55516d8c2afd?w=400&h=500&fit=crop',
     createdAt: new Date().toISOString()
   },
   {
     id: '3',
     title: 'נמר ריאליסטי',
+    category: 'tattoo',
     imageUrl: 'https://images.unsplash.com/photo-1568515045052-f9a854d70bfd?w=400&h=500&fit=crop',
     createdAt: new Date().toISOString()
   },
   {
     id: '4',
     title: 'מנדלה מסורתית',
+    category: 'tattoo',
     imageUrl: 'https://images.unsplash.com/photo-1475180098004-ca77a66827be?w=400&h=500&fit=crop',
     createdAt: new Date().toISOString()
   },
   {
     id: '5',
-    title: 'ורד שחור',
-    imageUrl: 'https://images.unsplash.com/photo-1562962230-16e4623d36e6?w=400&h=500&fit=crop',
+    title: 'ציור שמן - נוף עירוני',
+    category: 'art',
+    imageUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=400&h=500&fit=crop',
     createdAt: new Date().toISOString()
   },
   {
     id: '6',
-    title: 'גלים יפניים',
-    imageUrl: 'https://images.unsplash.com/photo-1598371839696-5c5bb00bdc28?w=400&h=500&fit=crop',
+    title: 'פורטרט בהזמנה',
+    category: 'art',
+    imageUrl: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=500&fit=crop',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '7',
+    title: 'חולצה מאויירת',
+    category: 'merch',
+    imageUrl: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=500&fit=crop',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '8',
+    title: 'הדפס ממוסגר',
+    category: 'merch',
+    imageUrl: 'https://images.unsplash.com/photo-1513519245088-0e12902e35a6?w=400&h=500&fit=crop',
     createdAt: new Date().toISOString()
   }
 ]
 
 const demoSiteContent = {
-  heroTitle: 'אומנות על העור',
-  heroSubtitle: 'סטודיו לקעקועים מקצועי בתל אביב',
-  heroDescription: 'אנחנו מתמחים ביצירת קעקועים ייחודיים ומותאמים אישית. כל עבודה היא יצירת אומנות.',
-  instagramUrl: 'https://instagram.com/inkstudio',
+  heroTitle: 'Rak.Eden',
+  heroSubtitle: 'סטודיו לקעקועים ואומנות בתל אביב',
+  heroDescription: 'אנחנו מתמחים ביצירת קעקועים ייחודיים, ציורים בהזמנה ומוצרי אומנות מותאמים אישית. כל עבודה היא יצירת אומנות.',
+  instagramUrl: 'https://instagram.com/rak.eden',
   contactPhone: '054-1234567',
-  contactEmail: 'info@inkstudio.co.il',
+  contactEmail: 'info@rakeden.co.il',
   contactAddress: 'רחוב דיזנגוף 123, תל אביב',
   workingHours: 'ראשון-חמישי: 10:00-20:00 | שישי: 10:00-14:00'
 }
@@ -124,6 +151,7 @@ const useStore = create((set, get) => ({
   appointments: [],
   workingHours: defaultWorkingHours,
   blockedDates: [],
+  blockedDateRanges: [], // New: date ranges
 
   // Check if using demo mode
   checkDemoMode: () => {
@@ -133,6 +161,13 @@ const useStore = create((set, get) => ({
     return isDemoMode
   },
 
+  // Get gallery items by category
+  getGalleryByCategory: (category) => {
+    const items = get().galleryItems
+    if (!category || category === 'all') return items
+    return items.filter(item => item.category === category)
+  },
+
   // Fetch gallery items
   fetchGalleryItems: async () => {
     set({ isLoading: true, error: null })
@@ -140,7 +175,6 @@ const useStore = create((set, get) => ({
     const isDemoMode = get().checkDemoMode()
 
     if (isDemoMode) {
-      // Use demo data
       set({ galleryItems: demoGalleryItems, isLoading: false })
       return
     }
@@ -174,7 +208,6 @@ const useStore = create((set, get) => ({
       if (docSnap.exists()) {
         set({ siteContent: docSnap.data() })
       } else {
-        // Initialize with demo content if not exists
         await setDoc(docRef, demoSiteContent)
         set({ siteContent: demoSiteContent })
       }
@@ -184,17 +217,17 @@ const useStore = create((set, get) => ({
     }
   },
 
-  // Add gallery item
-  addGalleryItem: async (file, title) => {
+  // Add gallery item with category
+  addGalleryItem: async (file, title, category = 'tattoo') => {
     set({ isLoading: true, error: null })
 
     const isDemoMode = get().checkDemoMode()
 
     if (isDemoMode) {
-      // Demo mode - add to local state with object URL
       const newItem = {
         id: Date.now().toString(),
         title,
+        category,
         imageUrl: URL.createObjectURL(file),
         createdAt: new Date().toISOString()
       }
@@ -206,15 +239,14 @@ const useStore = create((set, get) => ({
     }
 
     try {
-      // Upload image to Firebase Storage
       const fileName = `gallery/${Date.now()}_${file.name}`
       const storageRef = ref(storage, fileName)
       await uploadBytes(storageRef, file)
       const imageUrl = await getDownloadURL(storageRef)
 
-      // Add document to Firestore
       const docRef = await addDoc(collection(db, 'gallery'), {
         title,
+        category,
         imageUrl,
         fileName,
         createdAt: new Date().toISOString()
@@ -223,6 +255,7 @@ const useStore = create((set, get) => ({
       const newItem = {
         id: docRef.id,
         title,
+        category,
         imageUrl,
         fileName,
         createdAt: new Date().toISOString()
@@ -248,7 +281,6 @@ const useStore = create((set, get) => ({
     const isDemoMode = get().checkDemoMode()
 
     if (isDemoMode) {
-      // Demo mode - update local state
       set(state => ({
         galleryItems: state.galleryItems.map(item =>
           item.id === id
@@ -268,14 +300,12 @@ const useStore = create((set, get) => ({
       const docRef = doc(db, 'gallery', id)
       let updateData = { ...updates }
 
-      // If new file provided, upload it
       if (newFile) {
         const fileName = `gallery/${Date.now()}_${newFile.name}`
         const storageRef = ref(storage, fileName)
         await uploadBytes(storageRef, newFile)
         const imageUrl = await getDownloadURL(storageRef)
 
-        // Delete old image if exists
         const currentItem = get().galleryItems.find(item => item.id === id)
         if (currentItem?.fileName) {
           try {
@@ -311,7 +341,6 @@ const useStore = create((set, get) => ({
     const isDemoMode = get().checkDemoMode()
 
     if (isDemoMode) {
-      // Demo mode - remove from local state
       set(state => ({
         galleryItems: state.galleryItems.filter(item => item.id !== id),
         isLoading: false
@@ -322,10 +351,8 @@ const useStore = create((set, get) => ({
     try {
       const currentItem = get().galleryItems.find(item => item.id === id)
 
-      // Delete from Firestore
       await deleteDoc(doc(db, 'gallery', id))
 
-      // Delete image from Storage
       if (currentItem?.fileName) {
         try {
           const storageRef = ref(storage, currentItem.fileName)
@@ -353,7 +380,6 @@ const useStore = create((set, get) => ({
     const isDemoMode = get().checkDemoMode()
 
     if (isDemoMode) {
-      // Demo mode - update local state
       set(state => ({
         siteContent: { ...state.siteContent, ...updates },
         isLoading: false
@@ -424,9 +450,8 @@ const useStore = create((set, get) => ({
         isLoading: false
       }))
 
-      // Mock email notification
       console.log('📧 Email notification (mock):', {
-        to: 'artist@inkstudio.co.il',
+        to: 'artist@rakeden.co.il',
         subject: 'הזמנה חדשה!',
         body: `התקבלה הזמנה חדשה מ-${appointmentData.fullName} לתאריך ${appointmentData.date} בשעה ${appointmentData.time}`
       })
@@ -447,9 +472,8 @@ const useStore = create((set, get) => ({
         isLoading: false
       }))
 
-      // Mock email notification
       console.log('📧 Email notification (mock):', {
-        to: 'artist@inkstudio.co.il',
+        to: 'artist@rakeden.co.il',
         subject: 'הזמנה חדשה!',
         body: `התקבלה הזמנה חדשה מ-${appointmentData.fullName} לתאריך ${appointmentData.date} בשעה ${appointmentData.time}`
       })
@@ -528,7 +552,6 @@ const useStore = create((set, get) => ({
     const isDemoMode = get().checkDemoMode()
 
     if (isDemoMode) {
-      // Check localStorage for saved working hours
       const saved = localStorage.getItem('workingHours')
       if (saved) {
         set({ workingHours: JSON.parse(saved) })
@@ -568,14 +591,18 @@ const useStore = create((set, get) => ({
     }
   },
 
-  // Fetch blocked dates
+  // Fetch blocked dates and ranges
   fetchBlockedDates: async () => {
     const isDemoMode = get().checkDemoMode()
 
     if (isDemoMode) {
-      const saved = localStorage.getItem('blockedDates')
-      if (saved) {
-        set({ blockedDates: JSON.parse(saved) })
+      const savedDates = localStorage.getItem('blockedDates')
+      const savedRanges = localStorage.getItem('blockedDateRanges')
+      if (savedDates) {
+        set({ blockedDates: JSON.parse(savedDates) })
+      }
+      if (savedRanges) {
+        set({ blockedDateRanges: JSON.parse(savedRanges) })
       }
       return
     }
@@ -585,7 +612,11 @@ const useStore = create((set, get) => ({
       const docSnap = await getDoc(docRef)
 
       if (docSnap.exists()) {
-        set({ blockedDates: docSnap.data().dates || [] })
+        const data = docSnap.data()
+        set({
+          blockedDates: data.dates || [],
+          blockedDateRanges: data.ranges || []
+        })
       }
     } catch (error) {
       console.error('Error fetching blocked dates:', error)
@@ -609,7 +640,7 @@ const useStore = create((set, get) => ({
 
     try {
       const docRef = doc(db, 'settings', 'blockedDates')
-      await setDoc(docRef, { dates: newBlocked })
+      await setDoc(docRef, { dates: newBlocked, ranges: get().blockedDateRanges }, { merge: true })
       set({ blockedDates: newBlocked })
     } catch (error) {
       console.error('Error adding blocked date:', error)
@@ -630,7 +661,7 @@ const useStore = create((set, get) => ({
 
     try {
       const docRef = doc(db, 'settings', 'blockedDates')
-      await setDoc(docRef, { dates: newBlocked })
+      await setDoc(docRef, { dates: newBlocked, ranges: get().blockedDateRanges }, { merge: true })
       set({ blockedDates: newBlocked })
     } catch (error) {
       console.error('Error removing blocked date:', error)
@@ -638,12 +669,83 @@ const useStore = create((set, get) => ({
     }
   },
 
+  // Add blocked date range
+  addBlockedDateRange: async (startDate, endDate, reason = '') => {
+    const isDemoMode = get().checkDemoMode()
+    const currentRanges = get().blockedDateRanges
+
+    const newRange = {
+      id: Date.now().toString(),
+      startDate,
+      endDate,
+      reason,
+      createdAt: new Date().toISOString()
+    }
+
+    const newRanges = [...currentRanges, newRange]
+
+    if (isDemoMode) {
+      localStorage.setItem('blockedDateRanges', JSON.stringify(newRanges))
+      set({ blockedDateRanges: newRanges })
+      return newRange
+    }
+
+    try {
+      const docRef = doc(db, 'settings', 'blockedDates')
+      await setDoc(docRef, { dates: get().blockedDates, ranges: newRanges }, { merge: true })
+      set({ blockedDateRanges: newRanges })
+      return newRange
+    } catch (error) {
+      console.error('Error adding blocked date range:', error)
+      throw error
+    }
+  },
+
+  // Remove blocked date range
+  removeBlockedDateRange: async (rangeId) => {
+    const isDemoMode = get().checkDemoMode()
+    const newRanges = get().blockedDateRanges.filter(r => r.id !== rangeId)
+
+    if (isDemoMode) {
+      localStorage.setItem('blockedDateRanges', JSON.stringify(newRanges))
+      set({ blockedDateRanges: newRanges })
+      return
+    }
+
+    try {
+      const docRef = doc(db, 'settings', 'blockedDates')
+      await setDoc(docRef, { dates: get().blockedDates, ranges: newRanges }, { merge: true })
+      set({ blockedDateRanges: newRanges })
+    } catch (error) {
+      console.error('Error removing blocked date range:', error)
+      throw error
+    }
+  },
+
+  // Check if date is in any blocked range
+  isDateInBlockedRange: (date) => {
+    const { blockedDateRanges } = get()
+    const checkDate = new Date(date)
+
+    return blockedDateRanges.some(range => {
+      const start = new Date(range.startDate)
+      const end = new Date(range.endDate)
+      return checkDate >= start && checkDate <= end
+    })
+  },
+
+  // Check if date is blocked (single date or in range)
+  isDateBlocked: (date) => {
+    const { blockedDates } = get()
+    return blockedDates.includes(date) || get().isDateInBlockedRange(date)
+  },
+
   // Check if time slot is available
   isTimeSlotAvailable: (date, time) => {
-    const { appointments, blockedDates, workingHours } = get()
+    const { appointments, workingHours } = get()
 
     // Check if date is blocked
-    if (blockedDates.includes(date)) return false
+    if (get().isDateBlocked(date)) return false
 
     // Check working hours for that day
     const dayOfWeek = new Date(date).getDay()
@@ -665,9 +767,9 @@ const useStore = create((set, get) => ({
 
   // Get available time slots for a date
   getAvailableTimeSlots: (date) => {
-    const { workingHours, appointments, blockedDates } = get()
+    const { workingHours, appointments } = get()
 
-    if (blockedDates.includes(date)) return []
+    if (get().isDateBlocked(date)) return []
 
     const dayOfWeek = new Date(date).getDay()
     const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
