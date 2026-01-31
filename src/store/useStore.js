@@ -15,7 +15,7 @@ import {
   getDownloadURL,
   deleteObject
 } from 'firebase/storage'
-import { db, storage } from '../config/firebase'
+import { db, storage, isFirebaseConfigured } from '../config/firebase'
 
 // Gallery categories
 export const GALLERY_CATEGORIES = {
@@ -155,8 +155,7 @@ const useStore = create((set, get) => ({
 
   // Check if using demo mode
   checkDemoMode: () => {
-    const isDemoMode = !import.meta.env.VITE_FIREBASE_API_KEY ||
-                       import.meta.env.VITE_FIREBASE_API_KEY === 'demo-api-key'
+    const isDemoMode = !isFirebaseConfigured
     set({ isDemo: isDemoMode })
     return isDemoMode
   },
