@@ -28,7 +28,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: run: npm install
+        run: npm install --legacy-peer-deps
 
       - name: Create .env file
         run: |
