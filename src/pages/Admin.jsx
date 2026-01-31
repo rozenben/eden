@@ -13,16 +13,15 @@ import {
   FaCalendarAlt,
   FaClock,
   FaCheck,
-  FaHourglass,
   FaCheckCircle,
   FaChevronRight,
   FaChevronLeft,
   FaBan,
-  FaUser,
   FaPhone,
-  FaEnvelope
+  FaEnvelope,
+  FaCalendarMinus
 } from 'react-icons/fa'
-import useStore from '../store/useStore'
+import useStore, { GALLERY_CATEGORIES } from '../store/useStore'
 
 // Hebrew day names
 const hebrewDays = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳']
@@ -74,45 +73,48 @@ const AdminLogin = ({ onLogin }) => {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-4">
-      <div className="max-w-md w-full">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-[#d4af37] mb-2">ממשק ניהול</h1>
-          <p className="text-gray-400">הכנס סיסמה כדי להיכנס</p>
+      <div className="max-w-sm w-full">
+        <div className="text-center mb-6">
+          <h1 className="text-2xl font-bold mb-1">
+            <span className="text-[#d4af37]">Rak</span>
+            <span className="text-white">.Eden</span>
+          </h1>
+          <p className="text-gray-400 text-sm">ממשק ניהול</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-[#1a1a1a] rounded-2xl p-8 border border-[#d4af37]/20">
-          <div className="mb-6">
-            <label className="block text-gray-400 text-sm mb-2">סיסמה</label>
+        <form onSubmit={handleSubmit} className="bg-[#1a1a1a] rounded-xl p-6 border border-[#d4af37]/20">
+          <div className="mb-4">
+            <label className="block text-gray-400 text-xs mb-2">סיסמה</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-[#2a2a2a] border border-[#d4af37]/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-[#d4af37] transition-colors"
+              className="w-full bg-[#2a2a2a] border border-[#d4af37]/20 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-[#d4af37] transition-colors"
               placeholder="הכנס סיסמה..."
               autoFocus
             />
           </div>
 
           {error && (
-            <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
+            <p className="text-red-500 text-xs mb-3 text-center">{error}</p>
           )}
 
           <button
             type="submit"
-            className="w-full bg-[#d4af37] text-black py-3 rounded-lg font-bold hover:bg-[#f4d03f] transition-colors"
+            className="w-full bg-[#d4af37] text-black py-2 rounded-md font-medium text-sm hover:bg-[#f4d03f] transition-colors"
           >
             התחברות
           </button>
 
           <Link
             to="/"
-            className="block text-center text-gray-500 hover:text-gray-300 mt-4 transition-colors"
+            className="block text-center text-gray-500 hover:text-gray-300 mt-3 text-xs transition-colors"
           >
             חזרה לאתר
           </Link>
         </form>
 
-        <p className="text-center text-gray-600 text-sm mt-4">
+        <p className="text-center text-gray-600 text-xs mt-3">
           סיסמת ברירת מחדל: admin123
         </p>
       </div>
@@ -120,9 +122,10 @@ const AdminLogin = ({ onLogin }) => {
   )
 }
 
-// Image Upload Modal
+// Image Upload Modal with Category
 const ImageUploadModal = ({ isOpen, onClose, onUpload, editItem = null }) => {
   const [title, setTitle] = useState(editItem?.title || '')
+  const [category, setCategory] = useState(editItem?.category || 'tattoo')
   const [file, setFile] = useState(null)
   const [preview, setPreview] = useState(editItem?.imageUrl || null)
   const [isUploading, setIsUploading] = useState(false)
@@ -131,9 +134,11 @@ const ImageUploadModal = ({ isOpen, onClose, onUpload, editItem = null }) => {
   useEffect(() => {
     if (editItem) {
       setTitle(editItem.title)
+      setCategory(editItem.category || 'tattoo')
       setPreview(editItem.imageUrl)
     } else {
       setTitle('')
+      setCategory('tattoo')
       setFile(null)
       setPreview(null)
     }
@@ -153,7 +158,7 @@ const ImageUploadModal = ({ isOpen, onClose, onUpload, editItem = null }) => {
 
     setIsUploading(true)
     try {
-      await onUpload(title, file, editItem?.id)
+      await onUpload(title, category, file, editItem?.id)
       onClose()
     } catch (error) {
       console.error('Upload error:', error)
@@ -167,38 +172,38 @@ const ImageUploadModal = ({ isOpen, onClose, onUpload, editItem = null }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center modal-overlay p-4">
       <div
-        className="bg-[#1a1a1a] rounded-2xl p-6 w-full max-w-lg border border-[#d4af37]/20"
+        className="bg-[#1a1a1a] rounded-xl p-5 w-full max-w-md border border-[#d4af37]/20"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-white">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-white">
             {editItem ? 'עריכת תמונה' : 'הוספת תמונה חדשה'}
           </h3>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-white transition-colors"
           >
-            <FaTimes size={20} />
+            <FaTimes size={16} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="mb-6">
-            <label className="block text-gray-400 text-sm mb-2">תמונה</label>
+          <div className="mb-4">
+            <label className="block text-gray-400 text-xs mb-2">תמונה</label>
             <div
-              className="upload-area rounded-lg p-8 text-center cursor-pointer"
+              className="upload-area rounded-md p-6 text-center cursor-pointer"
               onClick={() => fileInputRef.current?.click()}
             >
               {preview ? (
                 <img
                   src={preview}
                   alt="Preview"
-                  className="max-h-48 mx-auto rounded-lg object-contain"
+                  className="max-h-36 mx-auto rounded-md object-contain"
                 />
               ) : (
                 <div className="text-gray-500">
-                  <FaUpload size={32} className="mx-auto mb-2 text-[#d4af37]/50" />
-                  <p>לחץ לבחירת תמונה</p>
+                  <FaUpload size={24} className="mx-auto mb-2 text-[#d4af37]/50" />
+                  <p className="text-xs">לחץ לבחירת תמונה</p>
                 </div>
               )}
             </div>
@@ -211,36 +216,56 @@ const ImageUploadModal = ({ isOpen, onClose, onUpload, editItem = null }) => {
             />
           </div>
 
-          <div className="mb-6">
-            <label className="block text-gray-400 text-sm mb-2">כותרת</label>
+          <div className="mb-4">
+            <label className="block text-gray-400 text-xs mb-2">קטגוריה</label>
+            <div className="grid grid-cols-3 gap-2">
+              {Object.entries(GALLERY_CATEGORIES).map(([key, cat]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setCategory(key)}
+                  className={`p-2 rounded-md text-xs transition-colors ${
+                    category === key
+                      ? 'bg-[#d4af37] text-black'
+                      : 'bg-[#2a2a2a] text-gray-400 hover:text-white'
+                  }`}
+                >
+                  {cat.icon} {cat.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-gray-400 text-xs mb-2">כותרת</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full bg-[#2a2a2a] border border-[#d4af37]/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-[#d4af37] transition-colors"
+              className="w-full bg-[#2a2a2a] border border-[#d4af37]/20 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-[#d4af37] transition-colors"
               placeholder="הכנס כותרת..."
               required
             />
           </div>
 
-          <div className="flex gap-4">
+          <div className="flex gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 bg-[#2a2a2a] text-white py-3 rounded-lg font-bold hover:bg-[#3a3a3a] transition-colors"
+              className="flex-1 bg-[#2a2a2a] text-white py-2 rounded-md font-medium text-sm hover:bg-[#3a3a3a] transition-colors"
             >
               ביטול
             </button>
             <button
               type="submit"
               disabled={isUploading || (!file && !editItem)}
-              className="flex-1 bg-[#d4af37] text-black py-3 rounded-lg font-bold hover:bg-[#f4d03f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 bg-[#d4af37] text-black py-2 rounded-md font-medium text-sm hover:bg-[#f4d03f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isUploading ? (
-                <div className="spinner w-5 h-5" />
+                <div className="spinner w-4 h-4" />
               ) : (
                 <>
-                  <FaSave />
+                  <FaSave size={12} />
                   {editItem ? 'עדכון' : 'הוספה'}
                 </>
               )}
@@ -248,6 +273,127 @@ const ImageUploadModal = ({ isOpen, onClose, onUpload, editItem = null }) => {
           </div>
         </form>
       </div>
+    </div>
+  )
+}
+
+// Date Range Blocking Component
+const DateRangeBlocker = () => {
+  const { blockedDateRanges, addBlockedDateRange, removeBlockedDateRange } = useStore()
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const [reason, setReason] = useState('')
+  const [isAdding, setIsAdding] = useState(false)
+
+  const handleAddRange = async (e) => {
+    e.preventDefault()
+    if (!startDate || !endDate) return
+    if (new Date(startDate) > new Date(endDate)) {
+      alert('תאריך התחלה חייב להיות לפני תאריך סיום')
+      return
+    }
+
+    setIsAdding(true)
+    try {
+      await addBlockedDateRange(startDate, endDate, reason)
+      setStartDate('')
+      setEndDate('')
+      setReason('')
+    } catch (error) {
+      console.error('Error adding date range:', error)
+    } finally {
+      setIsAdding(false)
+    }
+  }
+
+  const handleRemove = async (rangeId) => {
+    if (window.confirm('האם להסיר את טווח התאריכים החסום?')) {
+      await removeBlockedDateRange(rangeId)
+    }
+  }
+
+  return (
+    <div className="bg-[#1a1a1a] rounded-xl p-5 border border-[#d4af37]/20">
+      <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+        <FaCalendarMinus className="text-[#d4af37]" />
+        חסימת טווח תאריכים
+      </h3>
+
+      <form onSubmit={handleAddRange} className="mb-4">
+        <div className="grid sm:grid-cols-2 gap-3 mb-3">
+          <div>
+            <label className="block text-gray-400 text-xs mb-1">מתאריך</label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              min={new Date().toISOString().split('T')[0]}
+              className="w-full bg-[#2a2a2a] border border-[#d4af37]/20 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-[#d4af37]"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-gray-400 text-xs mb-1">עד תאריך</label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              min={startDate || new Date().toISOString().split('T')[0]}
+              className="w-full bg-[#2a2a2a] border border-[#d4af37]/20 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-[#d4af37]"
+              required
+            />
+          </div>
+        </div>
+        <div className="mb-3">
+          <label className="block text-gray-400 text-xs mb-1">סיבה (אופציונלי)</label>
+          <input
+            type="text"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="חופשה, אירוע פרטי..."
+            className="w-full bg-[#2a2a2a] border border-[#d4af37]/20 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-[#d4af37]"
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={isAdding || !startDate || !endDate}
+          className="w-full bg-[#d4af37] text-black py-2 rounded-md font-medium text-sm hover:bg-[#f4d03f] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          {isAdding ? <div className="spinner w-4 h-4" /> : <><FaPlus size={12} /> הוסף חסימה</>}
+        </button>
+      </form>
+
+      {/* Existing Blocked Ranges */}
+      {blockedDateRanges.length > 0 && (
+        <div>
+          <h4 className="text-sm font-medium text-gray-400 mb-2">טווחים חסומים:</h4>
+          <div className="space-y-2">
+            {blockedDateRanges.map(range => (
+              <div
+                key={range.id}
+                className="flex items-center justify-between bg-red-500/10 border border-red-500/20 rounded-md p-3"
+              >
+                <div>
+                  <p className="text-sm text-white">
+                    {new Date(range.startDate).toLocaleDateString('he-IL')} - {new Date(range.endDate).toLocaleDateString('he-IL')}
+                  </p>
+                  {range.reason && <p className="text-xs text-gray-400">{range.reason}</p>}
+                </div>
+                <button
+                  onClick={() => handleRemove(range.id)}
+                  className="text-red-500 hover:text-red-400 p-1"
+                >
+                  <FaTrash size={12} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {blockedDateRanges.length === 0 && (
+        <p className="text-center text-gray-500 text-xs">אין טווחי תאריכים חסומים</p>
+      )}
     </div>
   )
 }
@@ -263,7 +409,6 @@ const AppointmentsManager = () => {
   } = useStore()
 
   const [filter, setFilter] = useState('all')
-  const [selectedAppointment, setSelectedAppointment] = useState(null)
 
   useEffect(() => {
     fetchAppointments()
@@ -285,20 +430,19 @@ const AppointmentsManager = () => {
   }
 
   return (
-    <div className="bg-[#1a1a1a] rounded-2xl p-6 border border-[#d4af37]/20">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-        <h3 className="text-xl font-bold text-white flex items-center gap-2">
+    <div className="bg-[#1a1a1a] rounded-xl p-5 border border-[#d4af37]/20">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+        <h3 className="text-lg font-bold text-white flex items-center gap-2">
           <FaCalendarAlt className="text-[#d4af37]" />
           ניהול תורים
         </h3>
 
-        {/* Filter */}
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-1 flex-wrap">
           {['all', 'pending', 'confirmed', 'completed'].map(status => (
             <button
               key={status}
               onClick={() => setFilter(status)}
-              className={`px-3 py-1 rounded-lg text-sm transition-colors ${
+              className={`px-2 py-1 rounded-md text-xs transition-colors ${
                 filter === status
                   ? 'bg-[#d4af37] text-black'
                   : 'bg-[#2a2a2a] text-gray-400 hover:text-white'
@@ -311,85 +455,84 @@ const AppointmentsManager = () => {
       </div>
 
       {isLoading && (
-        <div className="flex justify-center py-8">
+        <div className="flex justify-center py-6">
           <div className="spinner" />
         </div>
       )}
 
       {!isLoading && filteredAppointments.length === 0 && (
-        <div className="text-center py-12">
-          <FaCalendarAlt size={48} className="text-gray-600 mx-auto mb-4" />
-          <p className="text-gray-500">אין תורים {filter !== 'all' && statusLabels[filter]}</p>
+        <div className="text-center py-10">
+          <FaCalendarAlt size={36} className="text-gray-600 mx-auto mb-3" />
+          <p className="text-gray-500 text-sm">אין תורים {filter !== 'all' && statusLabels[filter]}</p>
         </div>
       )}
 
       {!isLoading && filteredAppointments.length > 0 && (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {filteredAppointments.map(apt => (
             <div
               key={apt.id}
-              className="bg-[#2a2a2a] rounded-xl p-4 border border-[#d4af37]/10 hover:border-[#d4af37]/30 transition-colors"
+              className="bg-[#2a2a2a] rounded-lg p-3 border border-[#d4af37]/10 hover:border-[#d4af37]/20 transition-colors"
             >
-              <div className="flex flex-col sm:flex-row justify-between gap-4">
+              <div className="flex flex-col sm:flex-row justify-between gap-3">
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h4 className="font-bold text-white">{apt.fullName}</h4>
-                    <span className={`px-2 py-0.5 rounded text-xs border ${statusColors[apt.status]}`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h4 className="font-medium text-sm text-white">{apt.fullName}</h4>
+                    <span className={`px-1.5 py-0.5 rounded text-xs border ${statusColors[apt.status]}`}>
                       {statusLabels[apt.status]}
                     </span>
                   </div>
 
-                  <div className="grid sm:grid-cols-2 gap-2 text-sm text-gray-400">
-                    <div className="flex items-center gap-2">
-                      <FaCalendarAlt className="text-[#d4af37]" />
+                  <div className="grid sm:grid-cols-2 gap-1 text-xs text-gray-400">
+                    <div className="flex items-center gap-1">
+                      <FaCalendarAlt className="text-[#d4af37]" size={10} />
                       {new Date(apt.date).toLocaleDateString('he-IL')} | {apt.time}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <FaPhone className="text-[#d4af37]" />
+                    <div className="flex items-center gap-1">
+                      <FaPhone className="text-[#d4af37]" size={10} />
                       {apt.phone}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <FaEnvelope className="text-[#d4af37]" />
+                    <div className="flex items-center gap-1">
+                      <FaEnvelope className="text-[#d4af37]" size={10} />
                       {apt.email}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                       <span className="text-[#d4af37]">סוג:</span>
                       {categoryLabels[apt.category]}
                     </div>
                   </div>
 
                   {apt.description && (
-                    <p className="mt-2 text-sm text-gray-500 bg-[#1a1a1a] p-2 rounded">
+                    <p className="mt-2 text-xs text-gray-500 bg-[#1a1a1a] p-2 rounded">
                       {apt.description}
                     </p>
                   )}
                 </div>
 
-                {/* Actions */}
-                <div className="flex sm:flex-col gap-2">
+                <div className="flex sm:flex-col gap-1">
                   {apt.status === 'pending' && (
                     <button
                       onClick={() => handleStatusChange(apt.id, 'confirmed')}
-                      className="flex items-center gap-1 px-3 py-2 bg-green-500/20 text-green-500 rounded-lg text-sm hover:bg-green-500/30 transition-colors"
+                      className="flex items-center gap-1 px-2 py-1.5 bg-green-500/20 text-green-500 rounded-md text-xs hover:bg-green-500/30 transition-colors"
                     >
-                      <FaCheck />
+                      <FaCheck size={10} />
                       אשר
                     </button>
                   )}
                   {apt.status === 'confirmed' && (
                     <button
                       onClick={() => handleStatusChange(apt.id, 'completed')}
-                      className="flex items-center gap-1 px-3 py-2 bg-blue-500/20 text-blue-500 rounded-lg text-sm hover:bg-blue-500/30 transition-colors"
+                      className="flex items-center gap-1 px-2 py-1.5 bg-blue-500/20 text-blue-500 rounded-md text-xs hover:bg-blue-500/30 transition-colors"
                     >
-                      <FaCheckCircle />
+                      <FaCheckCircle size={10} />
                       הושלם
                     </button>
                   )}
                   <button
                     onClick={() => handleDelete(apt.id)}
-                    className="flex items-center gap-1 px-3 py-2 bg-red-500/20 text-red-500 rounded-lg text-sm hover:bg-red-500/30 transition-colors"
+                    className="flex items-center gap-1 px-2 py-1.5 bg-red-500/20 text-red-500 rounded-md text-xs hover:bg-red-500/30 transition-colors"
                   >
-                    <FaTrash />
+                    <FaTrash size={10} />
                     מחק
                   </button>
                 </div>
@@ -404,7 +547,7 @@ const AppointmentsManager = () => {
 
 // Admin Calendar View
 const AdminCalendar = () => {
-  const { appointments, blockedDates, addBlockedDate, removeBlockedDate } = useStore()
+  const { appointments, blockedDates, blockedDateRanges, addBlockedDate, removeBlockedDate, isDateInBlockedRange } = useStore()
   const [currentMonth, setCurrentMonth] = useState(new Date())
 
   const getDaysInMonth = (date) => {
@@ -448,46 +591,46 @@ const AdminCalendar = () => {
   const days = getDaysInMonth(currentMonth)
 
   return (
-    <div className="bg-[#1a1a1a] rounded-2xl p-6 border border-[#d4af37]/20">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-bold text-white flex items-center gap-2">
+    <div className="bg-[#1a1a1a] rounded-xl p-5 border border-[#d4af37]/20">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-bold text-white flex items-center gap-2">
           <FaCalendarAlt className="text-[#d4af37]" />
-          תצוגת לוח שנה
+          לוח שנה
         </h3>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}
-            className="p-2 hover:bg-[#2a2a2a] rounded-lg transition-colors text-[#d4af37]"
+            className="p-1.5 hover:bg-[#2a2a2a] rounded-md transition-colors text-[#d4af37]"
           >
-            <FaChevronRight />
+            <FaChevronRight size={12} />
           </button>
-          <span className="text-white font-medium min-w-[120px] text-center">
+          <span className="text-white text-sm font-medium min-w-[100px] text-center">
             {hebrewMonths[currentMonth.getMonth()]} {currentMonth.getFullYear()}
           </span>
           <button
             onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}
-            className="p-2 hover:bg-[#2a2a2a] rounded-lg transition-colors text-[#d4af37]"
+            className="p-1.5 hover:bg-[#2a2a2a] rounded-md transition-colors text-[#d4af37]"
           >
-            <FaChevronLeft />
+            <FaChevronLeft size={12} />
           </button>
         </div>
       </div>
 
-      {/* Day headers */}
       <div className="grid grid-cols-7 gap-1 mb-2">
         {hebrewDays.map((day, index) => (
-          <div key={index} className="text-center text-gray-500 text-sm py-2 font-medium">
+          <div key={index} className="text-center text-gray-500 text-xs py-1 font-medium">
             {day}
           </div>
         ))}
       </div>
 
-      {/* Days grid */}
       <div className="grid grid-cols-7 gap-1">
         {days.map((date, index) => {
           const dateStr = date ? formatDateStr(date) : null
           const dayAppointments = getAppointmentsForDate(date)
-          const isBlocked = dateStr && blockedDates.includes(dateStr)
+          const isBlockedSingle = dateStr && blockedDates.includes(dateStr)
+          const isBlockedRange = dateStr && isDateInBlockedRange(dateStr)
+          const isBlocked = isBlockedSingle || isBlockedRange
           const isToday = dateStr === formatDateStr(new Date())
           const isPast = date && date < new Date().setHours(0, 0, 0, 0)
 
@@ -495,49 +638,46 @@ const AdminCalendar = () => {
             <div
               key={index}
               className={`
-                min-h-[80px] p-1 rounded-lg border transition-all
+                min-h-[60px] p-1 rounded-md border transition-all text-xs
                 ${!date ? 'invisible' : ''}
-                ${isBlocked ? 'bg-red-500/10 border-red-500/30' : 'border-[#d4af37]/10 hover:border-[#d4af37]/30'}
+                ${isBlocked ? 'bg-red-500/10 border-red-500/20' : 'border-[#d4af37]/10 hover:border-[#d4af37]/20'}
                 ${isToday ? 'border-[#d4af37]' : ''}
-                ${isPast ? 'opacity-50' : ''}
+                ${isPast ? 'opacity-40' : ''}
               `}
             >
               {date && (
                 <>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className={`text-sm font-medium ${isToday ? 'text-[#d4af37]' : 'text-gray-400'}`}>
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className={`text-xs ${isToday ? 'text-[#d4af37] font-bold' : 'text-gray-400'}`}>
                       {date.getDate()}
                     </span>
-                    {!isPast && (
+                    {!isPast && !isBlockedRange && (
                       <button
                         onClick={() => toggleBlockedDate(date)}
-                        className={`p-1 rounded text-xs ${
-                          isBlocked ? 'text-red-500 hover:text-red-400' : 'text-gray-500 hover:text-gray-400'
+                        className={`p-0.5 rounded ${
+                          isBlockedSingle ? 'text-red-500' : 'text-gray-600 hover:text-gray-400'
                         }`}
-                        title={isBlocked ? 'הסר חסימה' : 'חסום תאריך'}
+                        title={isBlockedSingle ? 'הסר חסימה' : 'חסום'}
                       >
-                        <FaBan size={12} />
+                        <FaBan size={8} />
                       </button>
                     )}
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-0.5">
                     {dayAppointments.slice(0, 2).map(apt => (
                       <div
                         key={apt.id}
-                        className={`text-xs px-1 py-0.5 rounded truncate ${
+                        className={`text-[10px] px-1 rounded truncate ${
                           apt.status === 'confirmed' ? 'bg-green-500/20 text-green-500' :
                           apt.status === 'pending' ? 'bg-yellow-500/20 text-yellow-500' :
                           'bg-gray-500/20 text-gray-400'
                         }`}
-                        title={`${apt.fullName} - ${apt.time}`}
                       >
-                        {apt.time} {apt.fullName.split(' ')[0]}
+                        {apt.time}
                       </div>
                     ))}
                     {dayAppointments.length > 2 && (
-                      <div className="text-xs text-gray-500 px-1">
-                        +{dayAppointments.length - 2} נוספים
-                      </div>
+                      <div className="text-[10px] text-gray-500">+{dayAppointments.length - 2}</div>
                     )}
                   </div>
                 </>
@@ -547,18 +687,17 @@ const AdminCalendar = () => {
         })}
       </div>
 
-      {/* Legend */}
-      <div className="flex flex-wrap gap-4 mt-4 pt-4 border-t border-[#d4af37]/10">
-        <div className="flex items-center gap-2 text-sm">
-          <div className="w-3 h-3 rounded bg-yellow-500/20 border border-yellow-500/30" />
+      <div className="flex flex-wrap gap-3 mt-3 pt-3 border-t border-[#d4af37]/10 text-xs">
+        <div className="flex items-center gap-1">
+          <div className="w-2 h-2 rounded bg-yellow-500/30" />
           <span className="text-gray-400">ממתין</span>
         </div>
-        <div className="flex items-center gap-2 text-sm">
-          <div className="w-3 h-3 rounded bg-green-500/20 border border-green-500/30" />
+        <div className="flex items-center gap-1">
+          <div className="w-2 h-2 rounded bg-green-500/30" />
           <span className="text-gray-400">מאושר</span>
         </div>
-        <div className="flex items-center gap-2 text-sm">
-          <div className="w-3 h-3 rounded bg-red-500/10 border border-red-500/30" />
+        <div className="flex items-center gap-1">
+          <div className="w-2 h-2 rounded bg-red-500/20 border border-red-500/30" />
           <span className="text-gray-400">חסום</span>
         </div>
       </div>
@@ -596,28 +735,28 @@ const WorkingHoursManager = () => {
   const dayOrder = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
 
   return (
-    <div className="bg-[#1a1a1a] rounded-2xl p-6 border border-[#d4af37]/20">
-      <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+    <div className="bg-[#1a1a1a] rounded-xl p-5 border border-[#d4af37]/20">
+      <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
         <FaClock className="text-[#d4af37]" />
         שעות פעילות
       </h3>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         {dayOrder.map(day => (
           <div
             key={day}
-            className={`flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 rounded-lg ${
+            className={`flex flex-col sm:flex-row items-start sm:items-center gap-2 p-2 rounded-md ${
               hours[day]?.enabled ? 'bg-[#2a2a2a]' : 'bg-[#2a2a2a]/50'
             }`}
           >
-            <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <input
                 type="checkbox"
                 checked={hours[day]?.enabled || false}
                 onChange={(e) => handleChange(day, 'enabled', e.target.checked)}
-                className="w-5 h-5 accent-[#d4af37]"
+                className="w-4 h-4 accent-[#d4af37]"
               />
-              <span className={`font-medium w-16 ${hours[day]?.enabled ? 'text-white' : 'text-gray-500'}`}>
+              <span className={`text-sm w-14 ${hours[day]?.enabled ? 'text-white' : 'text-gray-500'}`}>
                 {hebrewDaysFull[day]}
               </span>
             </div>
@@ -628,14 +767,14 @@ const WorkingHoursManager = () => {
                   type="time"
                   value={hours[day]?.start || '10:00'}
                   onChange={(e) => handleChange(day, 'start', e.target.value)}
-                  className="bg-[#1a1a1a] border border-[#d4af37]/20 rounded px-3 py-1 text-white text-sm focus:outline-none focus:border-[#d4af37]"
+                  className="bg-[#1a1a1a] border border-[#d4af37]/20 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-[#d4af37]"
                 />
-                <span className="text-gray-500">עד</span>
+                <span className="text-gray-500 text-xs">עד</span>
                 <input
                   type="time"
                   value={hours[day]?.end || '20:00'}
                   onChange={(e) => handleChange(day, 'end', e.target.value)}
-                  className="bg-[#1a1a1a] border border-[#d4af37]/20 rounded px-3 py-1 text-white text-sm focus:outline-none focus:border-[#d4af37]"
+                  className="bg-[#1a1a1a] border border-[#d4af37]/20 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-[#d4af37]"
                 />
               </div>
             )}
@@ -645,16 +784,9 @@ const WorkingHoursManager = () => {
 
       <button
         onClick={handleSave}
-        className="mt-6 w-full bg-[#d4af37] text-black py-3 rounded-lg font-bold hover:bg-[#f4d03f] transition-colors flex items-center justify-center gap-2"
+        className="mt-4 w-full bg-[#d4af37] text-black py-2 rounded-md font-medium text-sm hover:bg-[#f4d03f] transition-colors flex items-center justify-center gap-2"
       >
-        {saved ? (
-          'נשמר בהצלחה!'
-        ) : (
-          <>
-            <FaSave />
-            שמור שינויים
-          </>
-        )}
+        {saved ? 'נשמר!' : <><FaSave size={12} /> שמור</>}
       </button>
     </div>
   )
@@ -683,31 +815,29 @@ const SettingsPanel = () => {
   }
 
   const fields = [
-    { name: 'heroTitle', label: 'כותרת ראשית', type: 'text' },
     { name: 'heroSubtitle', label: 'תת כותרת', type: 'text' },
     { name: 'heroDescription', label: 'תיאור', type: 'textarea' },
     { name: 'instagramUrl', label: 'קישור אינסטגרם', type: 'url' },
     { name: 'contactPhone', label: 'טלפון', type: 'tel' },
     { name: 'contactEmail', label: 'אימייל', type: 'email' },
-    { name: 'contactAddress', label: 'כתובת', type: 'text' },
-    { name: 'workingHours', label: 'שעות פעילות (טקסט)', type: 'text' }
+    { name: 'contactAddress', label: 'כתובת', type: 'text' }
   ]
 
   return (
-    <div className="bg-[#1a1a1a] rounded-2xl p-6 border border-[#d4af37]/20">
-      <h3 className="text-xl font-bold text-white mb-6">הגדרות האתר</h3>
+    <div className="bg-[#1a1a1a] rounded-xl p-5 border border-[#d4af37]/20">
+      <h3 className="text-lg font-bold text-white mb-4">הגדרות האתר</h3>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-3">
         {fields.map((field) => (
           <div key={field.name}>
-            <label className="block text-gray-400 text-sm mb-1">{field.label}</label>
+            <label className="block text-gray-400 text-xs mb-1">{field.label}</label>
             {field.type === 'textarea' ? (
               <textarea
                 name={field.name}
                 value={formData[field.name] || ''}
                 onChange={handleChange}
-                rows={3}
-                className="w-full bg-[#2a2a2a] border border-[#d4af37]/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-[#d4af37] transition-colors resize-none"
+                rows={2}
+                className="w-full bg-[#2a2a2a] border border-[#d4af37]/20 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-[#d4af37] transition-colors resize-none"
               />
             ) : (
               <input
@@ -715,7 +845,7 @@ const SettingsPanel = () => {
                 name={field.name}
                 value={formData[field.name] || ''}
                 onChange={handleChange}
-                className="w-full bg-[#2a2a2a] border border-[#d4af37]/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-[#d4af37] transition-colors"
+                className="w-full bg-[#2a2a2a] border border-[#d4af37]/20 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-[#d4af37] transition-colors"
               />
             )}
           </div>
@@ -724,18 +854,9 @@ const SettingsPanel = () => {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-[#d4af37] text-black py-3 rounded-lg font-bold hover:bg-[#f4d03f] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          className="w-full bg-[#d4af37] text-black py-2 rounded-md font-medium text-sm hover:bg-[#f4d03f] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
         >
-          {isLoading ? (
-            <div className="spinner w-5 h-5" />
-          ) : saved ? (
-            'נשמר בהצלחה!'
-          ) : (
-            <>
-              <FaSave />
-              שמור שינויים
-            </>
-          )}
+          {isLoading ? <div className="spinner w-4 h-4" /> : saved ? 'נשמר!' : <><FaSave size={12} /> שמור</>}
         </button>
       </form>
     </div>
@@ -756,16 +877,17 @@ const GalleryManager = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editItem, setEditItem] = useState(null)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
+  const [filterCategory, setFilterCategory] = useState('all')
 
   useEffect(() => {
     fetchGalleryItems()
   }, [fetchGalleryItems])
 
-  const handleUpload = async (title, file, itemId = null) => {
+  const handleUpload = async (title, category, file, itemId = null) => {
     if (itemId) {
-      await updateGalleryItem(itemId, { title }, file)
+      await updateGalleryItem(itemId, { title, category }, file)
     } else {
-      await addGalleryItem(file, title)
+      await addGalleryItem(file, title, category)
     }
   }
 
@@ -784,31 +906,58 @@ const GalleryManager = () => {
     setIsModalOpen(true)
   }
 
+  const filteredItems = filterCategory === 'all'
+    ? galleryItems
+    : galleryItems.filter(item => item.category === filterCategory)
+
   return (
-    <div className="bg-[#1a1a1a] rounded-2xl p-6 border border-[#d4af37]/20">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-bold text-white">ניהול גלריה</h3>
+    <div className="bg-[#1a1a1a] rounded-xl p-5 border border-[#d4af37]/20">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+        <h3 className="text-lg font-bold text-white">ניהול גלריה</h3>
         <button
           onClick={openAddModal}
-          className="bg-[#d4af37] text-black px-4 py-2 rounded-lg font-bold hover:bg-[#f4d03f] transition-colors flex items-center gap-2"
+          className="bg-[#d4af37] text-black px-3 py-1.5 rounded-md font-medium text-xs hover:bg-[#f4d03f] transition-colors flex items-center gap-1"
         >
-          <FaPlus />
+          <FaPlus size={10} />
           הוסף תמונה
         </button>
       </div>
 
+      {/* Category Filter */}
+      <div className="flex gap-1 mb-4 flex-wrap">
+        <button
+          onClick={() => setFilterCategory('all')}
+          className={`px-2 py-1 rounded-md text-xs ${
+            filterCategory === 'all' ? 'bg-[#d4af37] text-black' : 'bg-[#2a2a2a] text-gray-400'
+          }`}
+        >
+          הכל
+        </button>
+        {Object.entries(GALLERY_CATEGORIES).map(([key, cat]) => (
+          <button
+            key={key}
+            onClick={() => setFilterCategory(key)}
+            className={`px-2 py-1 rounded-md text-xs ${
+              filterCategory === key ? 'bg-[#d4af37] text-black' : 'bg-[#2a2a2a] text-gray-400'
+            }`}
+          >
+            {cat.icon} {cat.label}
+          </button>
+        ))}
+      </div>
+
       {isLoading && (
-        <div className="flex justify-center py-8">
+        <div className="flex justify-center py-6">
           <div className="spinner" />
         </div>
       )}
 
       {!isLoading && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {galleryItems.map((item) => (
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+          {filteredItems.map((item) => (
             <div
               key={item.id}
-              className="relative group bg-[#2a2a2a] rounded-lg overflow-hidden"
+              className="relative group bg-[#2a2a2a] rounded-md overflow-hidden"
             >
               <div className="aspect-square">
                 <img
@@ -818,42 +967,41 @@ const GalleryManager = () => {
                 />
               </div>
 
-              <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+              <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
                 <button
                   onClick={() => handleEdit(item)}
-                  className="w-10 h-10 bg-[#d4af37] rounded-full flex items-center justify-center text-black hover:bg-[#f4d03f] transition-colors"
-                  title="עריכה"
+                  className="w-7 h-7 bg-[#d4af37] rounded-full flex items-center justify-center text-black hover:bg-[#f4d03f] transition-colors"
                 >
-                  <FaEdit />
+                  <FaEdit size={10} />
                 </button>
                 <button
                   onClick={() => setDeleteConfirm(item.id)}
-                  className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center text-white hover:bg-red-500 transition-colors"
-                  title="מחיקה"
+                  className="w-7 h-7 bg-red-600 rounded-full flex items-center justify-center text-white hover:bg-red-500 transition-colors"
                 >
-                  <FaTrash />
+                  <FaTrash size={10} />
                 </button>
               </div>
 
-              <div className="absolute bottom-0 right-0 left-0 bg-gradient-to-t from-black/90 to-transparent p-3">
-                <p className="text-white text-sm truncate">{item.title}</p>
+              <div className="absolute bottom-0 right-0 left-0 bg-gradient-to-t from-black/90 to-transparent p-1.5">
+                <p className="text-white text-[10px] truncate">{item.title}</p>
+                <span className="text-[9px] text-[#d4af37]">{GALLERY_CATEGORIES[item.category]?.label}</span>
               </div>
 
               {deleteConfirm === item.id && (
-                <div className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center p-4">
-                  <p className="text-white text-center mb-4">למחוק את התמונה?</p>
-                  <div className="flex gap-2">
+                <div className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center p-2">
+                  <p className="text-white text-xs text-center mb-2">מחק?</p>
+                  <div className="flex gap-1">
                     <button
                       onClick={() => handleDelete(item.id)}
-                      className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-500"
+                      className="bg-red-600 text-white px-2 py-1 rounded text-[10px]"
                     >
-                      מחק
+                      כן
                     </button>
                     <button
                       onClick={() => setDeleteConfirm(null)}
-                      className="bg-gray-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-500"
+                      className="bg-gray-600 text-white px-2 py-1 rounded text-[10px]"
                     >
-                      ביטול
+                      לא
                     </button>
                   </div>
                 </div>
@@ -863,16 +1011,10 @@ const GalleryManager = () => {
         </div>
       )}
 
-      {!isLoading && galleryItems.length === 0 && (
-        <div className="text-center py-12">
-          <FaImage size={48} className="text-gray-600 mx-auto mb-4" />
-          <p className="text-gray-500">אין תמונות בגלריה</p>
-          <button
-            onClick={openAddModal}
-            className="mt-4 text-[#d4af37] hover:underline"
-          >
-            הוסף תמונה ראשונה
-          </button>
+      {!isLoading && filteredItems.length === 0 && (
+        <div className="text-center py-10">
+          <FaImage size={32} className="text-gray-600 mx-auto mb-2" />
+          <p className="text-gray-500 text-xs">אין תמונות</p>
         </div>
       )}
 
@@ -901,61 +1043,63 @@ const AdminDashboard = ({ onLogout }) => {
   const tabs = [
     { id: 'appointments', label: 'תורים', icon: FaCalendarAlt },
     { id: 'calendar', label: 'לוח שנה', icon: FaCalendarAlt },
-    { id: 'hours', label: 'שעות פעילות', icon: FaClock },
+    { id: 'blocking', label: 'חסימות', icon: FaBan },
+    { id: 'hours', label: 'שעות', icon: FaClock },
     { id: 'gallery', label: 'גלריה', icon: FaImage },
     { id: 'settings', label: 'הגדרות', icon: FaSave }
   ]
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
-      {/* Header */}
-      <header className="bg-[#1a1a1a] border-b border-[#d4af37]/20 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-[#d4af37]">ממשק ניהול</h1>
+      <header className="bg-[#1a1a1a] border-b border-[#d4af37]/10 sticky top-0 z-40">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+          <h1 className="text-lg font-bold">
+            <span className="text-[#d4af37]">Rak</span>
+            <span className="text-white">.Eden</span>
+            <span className="text-gray-500 text-xs mr-2">ניהול</span>
+          </h1>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <Link
               to="/"
-              className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+              className="flex items-center gap-1 text-gray-400 hover:text-white transition-colors text-xs"
             >
-              <FaHome />
+              <FaHome size={12} />
               <span className="hidden sm:inline">לאתר</span>
             </Link>
             <button
               onClick={onLogout}
-              className="flex items-center gap-2 text-gray-400 hover:text-red-400 transition-colors"
+              className="flex items-center gap-1 text-gray-400 hover:text-red-400 transition-colors text-xs"
             >
-              <FaSignOutAlt />
-              <span className="hidden sm:inline">התנתק</span>
+              <FaSignOutAlt size={12} />
+              <span className="hidden sm:inline">יציאה</span>
             </button>
           </div>
         </div>
       </header>
 
-      {/* Demo Mode Banner */}
       {isDemo && (
-        <div className="bg-[#d4af37]/10 border-b border-[#d4af37]/20 px-4 py-3">
-          <p className="text-center text-[#d4af37] text-sm">
-            מצב דמו - השינויים נשמרים מקומית בלבד. הגדר Firebase כדי לשמור באופן קבוע.
+        <div className="bg-[#d4af37]/10 border-b border-[#d4af37]/10 px-4 py-2">
+          <p className="text-center text-[#d4af37] text-xs">
+            מצב דמו - השינויים נשמרים מקומית בלבד
           </p>
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="bg-[#1a1a1a] border-b border-[#d4af37]/20">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex gap-1 overflow-x-auto">
+      <div className="bg-[#1a1a1a] border-b border-[#d4af37]/10">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="flex gap-0.5 overflow-x-auto">
             {tabs.map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-3 font-medium transition-colors whitespace-nowrap ${
+                className={`flex items-center gap-1 px-3 py-2 font-medium text-xs transition-colors whitespace-nowrap ${
                   activeTab === tab.id
                     ? 'text-[#d4af37] border-b-2 border-[#d4af37]'
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
-                <tab.icon />
+                <tab.icon size={12} />
                 {tab.label}
               </button>
             ))}
@@ -963,14 +1107,19 @@ const AdminDashboard = ({ onLogout }) => {
         </div>
       </div>
 
-      {/* Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="max-w-6xl mx-auto px-4 py-6">
         {activeTab === 'appointments' && <AppointmentsManager />}
         {activeTab === 'calendar' && <AdminCalendar />}
+        {activeTab === 'blocking' && (
+          <div className="grid md:grid-cols-2 gap-4">
+            <DateRangeBlocker />
+            <WorkingHoursManager />
+          </div>
+        )}
         {activeTab === 'hours' && <WorkingHoursManager />}
         {activeTab === 'gallery' && <GalleryManager />}
         {activeTab === 'settings' && (
-          <div className="max-w-2xl">
+          <div className="max-w-lg">
             <SettingsPanel />
           </div>
         )}
@@ -979,7 +1128,6 @@ const AdminDashboard = ({ onLogout }) => {
   )
 }
 
-// Main Admin Component
 const Admin = () => {
   const { isAuthenticated, login, logout, checkAuth, checkDemoMode } = useStore()
 
