@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: ['main', 'master']
+    branches: ["tattoo-studio-website-YQzPL_L"]
   workflow_dispatch:
 
 permissions:
