@@ -68,6 +68,45 @@ const demoSiteContent = {
   workingHours: 'ראשון-חמישי: 10:00-20:00 | שישי: 10:00-14:00'
 }
 
+// Demo appointments
+const demoAppointments = [
+  {
+    id: '1',
+    fullName: 'ישראל ישראלי',
+    phone: '054-1234567',
+    email: 'israel@example.com',
+    category: 'tattoo',
+    description: 'קעקוע של דרקון יפני על הזרוע',
+    date: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0],
+    time: '14:00',
+    status: 'pending',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '2',
+    fullName: 'שרה כהן',
+    phone: '052-9876543',
+    email: 'sara@example.com',
+    category: 'painting',
+    description: 'ציור שמן בהזמנה - נוף ים תיכוני',
+    date: new Date(Date.now() + 86400000 * 5).toISOString().split('T')[0],
+    time: '11:00',
+    status: 'confirmed',
+    createdAt: new Date().toISOString()
+  }
+]
+
+// Default working hours
+const defaultWorkingHours = {
+  sunday: { enabled: true, start: '10:00', end: '20:00' },
+  monday: { enabled: true, start: '10:00', end: '20:00' },
+  tuesday: { enabled: true, start: '10:00', end: '20:00' },
+  wednesday: { enabled: true, start: '10:00', end: '20:00' },
+  thursday: { enabled: true, start: '10:00', end: '20:00' },
+  friday: { enabled: true, start: '10:00', end: '14:00' },
+  saturday: { enabled: false, start: '10:00', end: '14:00' }
+}
+
 const useStore = create((set, get) => ({
   // Gallery state
   galleryItems: [],
@@ -80,6 +119,11 @@ const useStore = create((set, get) => ({
   // Auth state
   isAuthenticated: false,
   isDemo: true,
+
+  // Booking state
+  appointments: [],
+  workingHours: defaultWorkingHours,
+  blockedDates: [],
 
   // Check if using demo mode
   checkDemoMode: () => {
@@ -330,6 +374,320 @@ const useStore = create((set, get) => ({
       set({ error: error.message, isLoading: false })
       throw error
     }
+  },
+
+  // ============ BOOKING SYSTEM ============
+
+  // Fetch appointments
+  fetchAppointments: async () => {
+    set({ isLoading: true, error: null })
+
+    const isDemoMode = get().checkDemoMode()
+
+    if (isDemoMode) {
+      set({ appointments: demoAppointments, isLoading: false })
+      return
+    }
+
+    try {
+      const querySnapshot = await getDocs(collection(db, 'appointments'))
+      const items = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }))
+      set({ appointments: items, isLoading: false })
+    } catch (error) {
+      console.error('Error fetching appointments:', error)
+      set({ error: error.message, isLoading: false, appointments: demoAppointments })
+    }
+  },
+
+  // Add appointment (client booking)
+  addAppointment: async (appointmentData) => {
+    set({ isLoading: true, error: null })
+
+    const isDemoMode = get().checkDemoMode()
+
+    const newAppointment = {
+      ...appointmentData,
+      status: 'pending',
+      createdAt: new Date().toISOString()
+    }
+
+    if (isDemoMode) {
+      const appointmentWithId = {
+        id: Date.now().toString(),
+        ...newAppointment
+      }
+      set(state => ({
+        appointments: [...state.appointments, appointmentWithId],
+        isLoading: false
+      }))
+
+      // Mock email notification
+      console.log('📧 Email notification (mock):', {
+        to: 'artist@inkstudio.co.il',
+        subject: 'הזמנה חדשה!',
+        body: `התקבלה הזמנה חדשה מ-${appointmentData.fullName} לתאריך ${appointmentData.date} בשעה ${appointmentData.time}`
+      })
+
+      return appointmentWithId
+    }
+
+    try {
+      const docRef = await addDoc(collection(db, 'appointments'), newAppointment)
+
+      const appointmentWithId = {
+        id: docRef.id,
+        ...newAppointment
+      }
+
+      set(state => ({
+        appointments: [...state.appointments, appointmentWithId],
+        isLoading: false
+      }))
+
+      // Mock email notification
+      console.log('📧 Email notification (mock):', {
+        to: 'artist@inkstudio.co.il',
+        subject: 'הזמנה חדשה!',
+        body: `התקבלה הזמנה חדשה מ-${appointmentData.fullName} לתאריך ${appointmentData.date} בשעה ${appointmentData.time}`
+      })
+
+      return appointmentWithId
+    } catch (error) {
+      console.error('Error adding appointment:', error)
+      set({ error: error.message, isLoading: false })
+      throw error
+    }
+  },
+
+  // Update appointment status
+  updateAppointmentStatus: async (id, status) => {
+    set({ isLoading: true, error: null })
+
+    const isDemoMode = get().checkDemoMode()
+
+    if (isDemoMode) {
+      set(state => ({
+        appointments: state.appointments.map(apt =>
+          apt.id === id ? { ...apt, status } : apt
+        ),
+        isLoading: false
+      }))
+      return
+    }
+
+    try {
+      const docRef = doc(db, 'appointments', id)
+      await updateDoc(docRef, { status })
+
+      set(state => ({
+        appointments: state.appointments.map(apt =>
+          apt.id === id ? { ...apt, status } : apt
+        ),
+        isLoading: false
+      }))
+    } catch (error) {
+      console.error('Error updating appointment:', error)
+      set({ error: error.message, isLoading: false })
+      throw error
+    }
+  },
+
+  // Delete appointment
+  deleteAppointment: async (id) => {
+    set({ isLoading: true, error: null })
+
+    const isDemoMode = get().checkDemoMode()
+
+    if (isDemoMode) {
+      set(state => ({
+        appointments: state.appointments.filter(apt => apt.id !== id),
+        isLoading: false
+      }))
+      return
+    }
+
+    try {
+      await deleteDoc(doc(db, 'appointments', id))
+
+      set(state => ({
+        appointments: state.appointments.filter(apt => apt.id !== id),
+        isLoading: false
+      }))
+    } catch (error) {
+      console.error('Error deleting appointment:', error)
+      set({ error: error.message, isLoading: false })
+      throw error
+    }
+  },
+
+  // Fetch working hours
+  fetchWorkingHours: async () => {
+    const isDemoMode = get().checkDemoMode()
+
+    if (isDemoMode) {
+      // Check localStorage for saved working hours
+      const saved = localStorage.getItem('workingHours')
+      if (saved) {
+        set({ workingHours: JSON.parse(saved) })
+      }
+      return
+    }
+
+    try {
+      const docRef = doc(db, 'settings', 'workingHours')
+      const docSnap = await getDoc(docRef)
+
+      if (docSnap.exists()) {
+        set({ workingHours: docSnap.data() })
+      }
+    } catch (error) {
+      console.error('Error fetching working hours:', error)
+    }
+  },
+
+  // Update working hours
+  updateWorkingHours: async (hours) => {
+    const isDemoMode = get().checkDemoMode()
+
+    if (isDemoMode) {
+      localStorage.setItem('workingHours', JSON.stringify(hours))
+      set({ workingHours: hours })
+      return
+    }
+
+    try {
+      const docRef = doc(db, 'settings', 'workingHours')
+      await setDoc(docRef, hours)
+      set({ workingHours: hours })
+    } catch (error) {
+      console.error('Error updating working hours:', error)
+      throw error
+    }
+  },
+
+  // Fetch blocked dates
+  fetchBlockedDates: async () => {
+    const isDemoMode = get().checkDemoMode()
+
+    if (isDemoMode) {
+      const saved = localStorage.getItem('blockedDates')
+      if (saved) {
+        set({ blockedDates: JSON.parse(saved) })
+      }
+      return
+    }
+
+    try {
+      const docRef = doc(db, 'settings', 'blockedDates')
+      const docSnap = await getDoc(docRef)
+
+      if (docSnap.exists()) {
+        set({ blockedDates: docSnap.data().dates || [] })
+      }
+    } catch (error) {
+      console.error('Error fetching blocked dates:', error)
+    }
+  },
+
+  // Add blocked date
+  addBlockedDate: async (date) => {
+    const isDemoMode = get().checkDemoMode()
+    const currentBlocked = get().blockedDates
+
+    if (currentBlocked.includes(date)) return
+
+    const newBlocked = [...currentBlocked, date]
+
+    if (isDemoMode) {
+      localStorage.setItem('blockedDates', JSON.stringify(newBlocked))
+      set({ blockedDates: newBlocked })
+      return
+    }
+
+    try {
+      const docRef = doc(db, 'settings', 'blockedDates')
+      await setDoc(docRef, { dates: newBlocked })
+      set({ blockedDates: newBlocked })
+    } catch (error) {
+      console.error('Error adding blocked date:', error)
+      throw error
+    }
+  },
+
+  // Remove blocked date
+  removeBlockedDate: async (date) => {
+    const isDemoMode = get().checkDemoMode()
+    const newBlocked = get().blockedDates.filter(d => d !== date)
+
+    if (isDemoMode) {
+      localStorage.setItem('blockedDates', JSON.stringify(newBlocked))
+      set({ blockedDates: newBlocked })
+      return
+    }
+
+    try {
+      const docRef = doc(db, 'settings', 'blockedDates')
+      await setDoc(docRef, { dates: newBlocked })
+      set({ blockedDates: newBlocked })
+    } catch (error) {
+      console.error('Error removing blocked date:', error)
+      throw error
+    }
+  },
+
+  // Check if time slot is available
+  isTimeSlotAvailable: (date, time) => {
+    const { appointments, blockedDates, workingHours } = get()
+
+    // Check if date is blocked
+    if (blockedDates.includes(date)) return false
+
+    // Check working hours for that day
+    const dayOfWeek = new Date(date).getDay()
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+    const dayConfig = workingHours[dayNames[dayOfWeek]]
+
+    if (!dayConfig?.enabled) return false
+
+    // Check if time is within working hours
+    if (time < dayConfig.start || time >= dayConfig.end) return false
+
+    // Check if slot is already booked
+    const existingAppointment = appointments.find(
+      apt => apt.date === date && apt.time === time && apt.status !== 'completed'
+    )
+
+    return !existingAppointment
+  },
+
+  // Get available time slots for a date
+  getAvailableTimeSlots: (date) => {
+    const { workingHours, appointments, blockedDates } = get()
+
+    if (blockedDates.includes(date)) return []
+
+    const dayOfWeek = new Date(date).getDay()
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+    const dayConfig = workingHours[dayNames[dayOfWeek]]
+
+    if (!dayConfig?.enabled) return []
+
+    const slots = []
+    const startHour = parseInt(dayConfig.start.split(':')[0])
+    const endHour = parseInt(dayConfig.end.split(':')[0])
+
+    for (let hour = startHour; hour < endHour; hour++) {
+      const time = `${hour.toString().padStart(2, '0')}:00`
+      const isBooked = appointments.some(
+        apt => apt.date === date && apt.time === time && apt.status !== 'completed'
+      )
+      slots.push({ time, available: !isBooked })
+    }
+
+    return slots
   },
 
   // Admin authentication (simple password-based)

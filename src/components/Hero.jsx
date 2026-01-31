@@ -1,13 +1,9 @@
+import { Link } from 'react-router-dom'
 import { FaInstagram, FaCalendarAlt } from 'react-icons/fa'
 import useStore from '../store/useStore'
 
 const Hero = () => {
   const { siteContent } = useStore()
-
-  const scrollToContact = () => {
-    const element = document.getElementById('contact')
-    element?.scrollIntoView({ behavior: 'smooth' })
-  }
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -44,14 +40,14 @@ const Hero = () => {
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 fade-in" style={{ animationDelay: '0.6s' }}>
-          {/* Book Now Button */}
-          <button
-            onClick={scrollToContact}
+          {/* Book Now Button - Links to /booking */}
+          <Link
+            to="/booking"
             className="btn-primary flex items-center gap-3 bg-[#d4af37] text-black px-8 py-4 rounded-lg font-bold text-lg hover:bg-[#f4d03f]"
           >
             <FaCalendarAlt />
             קבע תור עכשיו
-          </button>
+          </Link>
 
           {/* Instagram Button */}
           <a

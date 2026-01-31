@@ -9,9 +9,54 @@ import {
   FaImage,
   FaSave,
   FaTimes,
-  FaUpload
+  FaUpload,
+  FaCalendarAlt,
+  FaClock,
+  FaCheck,
+  FaHourglass,
+  FaCheckCircle,
+  FaChevronRight,
+  FaChevronLeft,
+  FaBan,
+  FaUser,
+  FaPhone,
+  FaEnvelope
 } from 'react-icons/fa'
 import useStore from '../store/useStore'
+
+// Hebrew day names
+const hebrewDays = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳']
+const hebrewDaysFull = {
+  sunday: 'ראשון',
+  monday: 'שני',
+  tuesday: 'שלישי',
+  wednesday: 'רביעי',
+  thursday: 'חמישי',
+  friday: 'שישי',
+  saturday: 'שבת'
+}
+const hebrewMonths = [
+  'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
+  'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'
+]
+
+const categoryLabels = {
+  tattoo: 'קעקוע',
+  painting: 'ציור בהזמנה',
+  merch: 'ייעוץ מרצ\'נדייז'
+}
+
+const statusLabels = {
+  pending: 'ממתין',
+  confirmed: 'מאושר',
+  completed: 'הושלם'
+}
+
+const statusColors = {
+  pending: 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30',
+  confirmed: 'bg-green-500/20 text-green-500 border-green-500/30',
+  completed: 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+}
 
 // Login Component
 const AdminLogin = ({ onLogin }) => {
@@ -138,7 +183,6 @@ const ImageUploadModal = ({ isOpen, onClose, onUpload, editItem = null }) => {
         </div>
 
         <form onSubmit={handleSubmit}>
-          {/* Image Upload */}
           <div className="mb-6">
             <label className="block text-gray-400 text-sm mb-2">תמונה</label>
             <div
@@ -167,7 +211,6 @@ const ImageUploadModal = ({ isOpen, onClose, onUpload, editItem = null }) => {
             />
           </div>
 
-          {/* Title Input */}
           <div className="mb-6">
             <label className="block text-gray-400 text-sm mb-2">כותרת</label>
             <input
@@ -180,7 +223,6 @@ const ImageUploadModal = ({ isOpen, onClose, onUpload, editItem = null }) => {
             />
           </div>
 
-          {/* Submit Button */}
           <div className="flex gap-4">
             <button
               type="button"
@@ -206,6 +248,414 @@ const ImageUploadModal = ({ isOpen, onClose, onUpload, editItem = null }) => {
           </div>
         </form>
       </div>
+    </div>
+  )
+}
+
+// Appointments Manager
+const AppointmentsManager = () => {
+  const {
+    appointments,
+    fetchAppointments,
+    updateAppointmentStatus,
+    deleteAppointment,
+    isLoading
+  } = useStore()
+
+  const [filter, setFilter] = useState('all')
+  const [selectedAppointment, setSelectedAppointment] = useState(null)
+
+  useEffect(() => {
+    fetchAppointments()
+  }, [fetchAppointments])
+
+  const filteredAppointments = appointments.filter(apt => {
+    if (filter === 'all') return true
+    return apt.status === filter
+  }).sort((a, b) => new Date(a.date) - new Date(b.date))
+
+  const handleStatusChange = async (id, status) => {
+    await updateAppointmentStatus(id, status)
+  }
+
+  const handleDelete = async (id) => {
+    if (window.confirm('האם למחוק את התור?')) {
+      await deleteAppointment(id)
+    }
+  }
+
+  return (
+    <div className="bg-[#1a1a1a] rounded-2xl p-6 border border-[#d4af37]/20">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+        <h3 className="text-xl font-bold text-white flex items-center gap-2">
+          <FaCalendarAlt className="text-[#d4af37]" />
+          ניהול תורים
+        </h3>
+
+        {/* Filter */}
+        <div className="flex gap-2 flex-wrap">
+          {['all', 'pending', 'confirmed', 'completed'].map(status => (
+            <button
+              key={status}
+              onClick={() => setFilter(status)}
+              className={`px-3 py-1 rounded-lg text-sm transition-colors ${
+                filter === status
+                  ? 'bg-[#d4af37] text-black'
+                  : 'bg-[#2a2a2a] text-gray-400 hover:text-white'
+              }`}
+            >
+              {status === 'all' ? 'הכל' : statusLabels[status]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {isLoading && (
+        <div className="flex justify-center py-8">
+          <div className="spinner" />
+        </div>
+      )}
+
+      {!isLoading && filteredAppointments.length === 0 && (
+        <div className="text-center py-12">
+          <FaCalendarAlt size={48} className="text-gray-600 mx-auto mb-4" />
+          <p className="text-gray-500">אין תורים {filter !== 'all' && statusLabels[filter]}</p>
+        </div>
+      )}
+
+      {!isLoading && filteredAppointments.length > 0 && (
+        <div className="space-y-4">
+          {filteredAppointments.map(apt => (
+            <div
+              key={apt.id}
+              className="bg-[#2a2a2a] rounded-xl p-4 border border-[#d4af37]/10 hover:border-[#d4af37]/30 transition-colors"
+            >
+              <div className="flex flex-col sm:flex-row justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h4 className="font-bold text-white">{apt.fullName}</h4>
+                    <span className={`px-2 py-0.5 rounded text-xs border ${statusColors[apt.status]}`}>
+                      {statusLabels[apt.status]}
+                    </span>
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-2 text-sm text-gray-400">
+                    <div className="flex items-center gap-2">
+                      <FaCalendarAlt className="text-[#d4af37]" />
+                      {new Date(apt.date).toLocaleDateString('he-IL')} | {apt.time}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <FaPhone className="text-[#d4af37]" />
+                      {apt.phone}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <FaEnvelope className="text-[#d4af37]" />
+                      {apt.email}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[#d4af37]">סוג:</span>
+                      {categoryLabels[apt.category]}
+                    </div>
+                  </div>
+
+                  {apt.description && (
+                    <p className="mt-2 text-sm text-gray-500 bg-[#1a1a1a] p-2 rounded">
+                      {apt.description}
+                    </p>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex sm:flex-col gap-2">
+                  {apt.status === 'pending' && (
+                    <button
+                      onClick={() => handleStatusChange(apt.id, 'confirmed')}
+                      className="flex items-center gap-1 px-3 py-2 bg-green-500/20 text-green-500 rounded-lg text-sm hover:bg-green-500/30 transition-colors"
+                    >
+                      <FaCheck />
+                      אשר
+                    </button>
+                  )}
+                  {apt.status === 'confirmed' && (
+                    <button
+                      onClick={() => handleStatusChange(apt.id, 'completed')}
+                      className="flex items-center gap-1 px-3 py-2 bg-blue-500/20 text-blue-500 rounded-lg text-sm hover:bg-blue-500/30 transition-colors"
+                    >
+                      <FaCheckCircle />
+                      הושלם
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleDelete(apt.id)}
+                    className="flex items-center gap-1 px-3 py-2 bg-red-500/20 text-red-500 rounded-lg text-sm hover:bg-red-500/30 transition-colors"
+                  >
+                    <FaTrash />
+                    מחק
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Admin Calendar View
+const AdminCalendar = () => {
+  const { appointments, blockedDates, addBlockedDate, removeBlockedDate } = useStore()
+  const [currentMonth, setCurrentMonth] = useState(new Date())
+
+  const getDaysInMonth = (date) => {
+    const year = date.getFullYear()
+    const month = date.getMonth()
+    const firstDay = new Date(year, month, 1)
+    const lastDay = new Date(year, month + 1, 0)
+    const daysInMonth = lastDay.getDate()
+    const startingDay = firstDay.getDay()
+
+    const days = []
+    for (let i = 0; i < startingDay; i++) {
+      days.push(null)
+    }
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push(new Date(year, month, i))
+    }
+    return days
+  }
+
+  const formatDateStr = (date) => {
+    if (!date) return null
+    return date.toISOString().split('T')[0]
+  }
+
+  const getAppointmentsForDate = (date) => {
+    if (!date) return []
+    const dateStr = formatDateStr(date)
+    return appointments.filter(apt => apt.date === dateStr)
+  }
+
+  const toggleBlockedDate = async (date) => {
+    const dateStr = formatDateStr(date)
+    if (blockedDates.includes(dateStr)) {
+      await removeBlockedDate(dateStr)
+    } else {
+      await addBlockedDate(dateStr)
+    }
+  }
+
+  const days = getDaysInMonth(currentMonth)
+
+  return (
+    <div className="bg-[#1a1a1a] rounded-2xl p-6 border border-[#d4af37]/20">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-xl font-bold text-white flex items-center gap-2">
+          <FaCalendarAlt className="text-[#d4af37]" />
+          תצוגת לוח שנה
+        </h3>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}
+            className="p-2 hover:bg-[#2a2a2a] rounded-lg transition-colors text-[#d4af37]"
+          >
+            <FaChevronRight />
+          </button>
+          <span className="text-white font-medium min-w-[120px] text-center">
+            {hebrewMonths[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+          </span>
+          <button
+            onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}
+            className="p-2 hover:bg-[#2a2a2a] rounded-lg transition-colors text-[#d4af37]"
+          >
+            <FaChevronLeft />
+          </button>
+        </div>
+      </div>
+
+      {/* Day headers */}
+      <div className="grid grid-cols-7 gap-1 mb-2">
+        {hebrewDays.map((day, index) => (
+          <div key={index} className="text-center text-gray-500 text-sm py-2 font-medium">
+            {day}
+          </div>
+        ))}
+      </div>
+
+      {/* Days grid */}
+      <div className="grid grid-cols-7 gap-1">
+        {days.map((date, index) => {
+          const dateStr = date ? formatDateStr(date) : null
+          const dayAppointments = getAppointmentsForDate(date)
+          const isBlocked = dateStr && blockedDates.includes(dateStr)
+          const isToday = dateStr === formatDateStr(new Date())
+          const isPast = date && date < new Date().setHours(0, 0, 0, 0)
+
+          return (
+            <div
+              key={index}
+              className={`
+                min-h-[80px] p-1 rounded-lg border transition-all
+                ${!date ? 'invisible' : ''}
+                ${isBlocked ? 'bg-red-500/10 border-red-500/30' : 'border-[#d4af37]/10 hover:border-[#d4af37]/30'}
+                ${isToday ? 'border-[#d4af37]' : ''}
+                ${isPast ? 'opacity-50' : ''}
+              `}
+            >
+              {date && (
+                <>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className={`text-sm font-medium ${isToday ? 'text-[#d4af37]' : 'text-gray-400'}`}>
+                      {date.getDate()}
+                    </span>
+                    {!isPast && (
+                      <button
+                        onClick={() => toggleBlockedDate(date)}
+                        className={`p-1 rounded text-xs ${
+                          isBlocked ? 'text-red-500 hover:text-red-400' : 'text-gray-500 hover:text-gray-400'
+                        }`}
+                        title={isBlocked ? 'הסר חסימה' : 'חסום תאריך'}
+                      >
+                        <FaBan size={12} />
+                      </button>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    {dayAppointments.slice(0, 2).map(apt => (
+                      <div
+                        key={apt.id}
+                        className={`text-xs px-1 py-0.5 rounded truncate ${
+                          apt.status === 'confirmed' ? 'bg-green-500/20 text-green-500' :
+                          apt.status === 'pending' ? 'bg-yellow-500/20 text-yellow-500' :
+                          'bg-gray-500/20 text-gray-400'
+                        }`}
+                        title={`${apt.fullName} - ${apt.time}`}
+                      >
+                        {apt.time} {apt.fullName.split(' ')[0]}
+                      </div>
+                    ))}
+                    {dayAppointments.length > 2 && (
+                      <div className="text-xs text-gray-500 px-1">
+                        +{dayAppointments.length - 2} נוספים
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Legend */}
+      <div className="flex flex-wrap gap-4 mt-4 pt-4 border-t border-[#d4af37]/10">
+        <div className="flex items-center gap-2 text-sm">
+          <div className="w-3 h-3 rounded bg-yellow-500/20 border border-yellow-500/30" />
+          <span className="text-gray-400">ממתין</span>
+        </div>
+        <div className="flex items-center gap-2 text-sm">
+          <div className="w-3 h-3 rounded bg-green-500/20 border border-green-500/30" />
+          <span className="text-gray-400">מאושר</span>
+        </div>
+        <div className="flex items-center gap-2 text-sm">
+          <div className="w-3 h-3 rounded bg-red-500/10 border border-red-500/30" />
+          <span className="text-gray-400">חסום</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Working Hours Manager
+const WorkingHoursManager = () => {
+  const { workingHours, updateWorkingHours, fetchWorkingHours } = useStore()
+  const [hours, setHours] = useState(workingHours)
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    fetchWorkingHours()
+  }, [fetchWorkingHours])
+
+  useEffect(() => {
+    setHours(workingHours)
+  }, [workingHours])
+
+  const handleChange = (day, field, value) => {
+    setHours(prev => ({
+      ...prev,
+      [day]: { ...prev[day], [field]: value }
+    }))
+  }
+
+  const handleSave = async () => {
+    await updateWorkingHours(hours)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }
+
+  const dayOrder = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+
+  return (
+    <div className="bg-[#1a1a1a] rounded-2xl p-6 border border-[#d4af37]/20">
+      <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+        <FaClock className="text-[#d4af37]" />
+        שעות פעילות
+      </h3>
+
+      <div className="space-y-3">
+        {dayOrder.map(day => (
+          <div
+            key={day}
+            className={`flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 rounded-lg ${
+              hours[day]?.enabled ? 'bg-[#2a2a2a]' : 'bg-[#2a2a2a]/50'
+            }`}
+          >
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <input
+                type="checkbox"
+                checked={hours[day]?.enabled || false}
+                onChange={(e) => handleChange(day, 'enabled', e.target.checked)}
+                className="w-5 h-5 accent-[#d4af37]"
+              />
+              <span className={`font-medium w-16 ${hours[day]?.enabled ? 'text-white' : 'text-gray-500'}`}>
+                {hebrewDaysFull[day]}
+              </span>
+            </div>
+
+            {hours[day]?.enabled && (
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <input
+                  type="time"
+                  value={hours[day]?.start || '10:00'}
+                  onChange={(e) => handleChange(day, 'start', e.target.value)}
+                  className="bg-[#1a1a1a] border border-[#d4af37]/20 rounded px-3 py-1 text-white text-sm focus:outline-none focus:border-[#d4af37]"
+                />
+                <span className="text-gray-500">עד</span>
+                <input
+                  type="time"
+                  value={hours[day]?.end || '20:00'}
+                  onChange={(e) => handleChange(day, 'end', e.target.value)}
+                  className="bg-[#1a1a1a] border border-[#d4af37]/20 rounded px-3 py-1 text-white text-sm focus:outline-none focus:border-[#d4af37]"
+                />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <button
+        onClick={handleSave}
+        className="mt-6 w-full bg-[#d4af37] text-black py-3 rounded-lg font-bold hover:bg-[#f4d03f] transition-colors flex items-center justify-center gap-2"
+      >
+        {saved ? (
+          'נשמר בהצלחה!'
+        ) : (
+          <>
+            <FaSave />
+            שמור שינויים
+          </>
+        )}
+      </button>
     </div>
   )
 }
@@ -240,7 +690,7 @@ const SettingsPanel = () => {
     { name: 'contactPhone', label: 'טלפון', type: 'tel' },
     { name: 'contactEmail', label: 'אימייל', type: 'email' },
     { name: 'contactAddress', label: 'כתובת', type: 'text' },
-    { name: 'workingHours', label: 'שעות פעילות', type: 'text' }
+    { name: 'workingHours', label: 'שעות פעילות (טקסט)', type: 'text' }
   ]
 
   return (
@@ -368,7 +818,6 @@ const GalleryManager = () => {
                 />
               </div>
 
-              {/* Overlay with actions */}
               <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                 <button
                   onClick={() => handleEdit(item)}
@@ -386,12 +835,10 @@ const GalleryManager = () => {
                 </button>
               </div>
 
-              {/* Title */}
               <div className="absolute bottom-0 right-0 left-0 bg-gradient-to-t from-black/90 to-transparent p-3">
                 <p className="text-white text-sm truncate">{item.title}</p>
               </div>
 
-              {/* Delete Confirmation */}
               {deleteConfirm === item.id && (
                 <div className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center p-4">
                   <p className="text-white text-center mb-4">למחוק את התמונה?</p>
@@ -444,7 +891,20 @@ const GalleryManager = () => {
 
 // Main Admin Dashboard
 const AdminDashboard = ({ onLogout }) => {
-  const { isDemo } = useStore()
+  const { isDemo, fetchBlockedDates } = useStore()
+  const [activeTab, setActiveTab] = useState('appointments')
+
+  useEffect(() => {
+    fetchBlockedDates()
+  }, [fetchBlockedDates])
+
+  const tabs = [
+    { id: 'appointments', label: 'תורים', icon: FaCalendarAlt },
+    { id: 'calendar', label: 'לוח שנה', icon: FaCalendarAlt },
+    { id: 'hours', label: 'שעות פעילות', icon: FaClock },
+    { id: 'gallery', label: 'גלריה', icon: FaImage },
+    { id: 'settings', label: 'הגדרות', icon: FaSave }
+  ]
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
@@ -481,19 +941,39 @@ const AdminDashboard = ({ onLogout }) => {
         </div>
       )}
 
-      {/* Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Settings - Takes 1 column */}
-          <div className="lg:col-span-1">
-            <SettingsPanel />
-          </div>
-
-          {/* Gallery Manager - Takes 2 columns */}
-          <div className="lg:col-span-2">
-            <GalleryManager />
+      {/* Tabs */}
+      <div className="bg-[#1a1a1a] border-b border-[#d4af37]/20">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex gap-1 overflow-x-auto">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-3 font-medium transition-colors whitespace-nowrap ${
+                  activeTab === tab.id
+                    ? 'text-[#d4af37] border-b-2 border-[#d4af37]'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <tab.icon />
+                {tab.label}
+              </button>
+            ))}
           </div>
         </div>
+      </div>
+
+      {/* Content */}
+      <main className="max-w-7xl mx-auto px-4 py-8">
+        {activeTab === 'appointments' && <AppointmentsManager />}
+        {activeTab === 'calendar' && <AdminCalendar />}
+        {activeTab === 'hours' && <WorkingHoursManager />}
+        {activeTab === 'gallery' && <GalleryManager />}
+        {activeTab === 'settings' && (
+          <div className="max-w-2xl">
+            <SettingsPanel />
+          </div>
+        )}
       </main>
     </div>
   )
