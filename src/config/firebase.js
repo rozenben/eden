@@ -3,6 +3,8 @@ import { getStorage } from 'firebase/storage'
 import { getFirestore } from 'firebase/firestore'
 import { getAuth } from 'firebase/auth'
 
+console.log("Checking VITE_FIREBASE_PROJECT_ID:", import.meta.env.VITE_FIREBASE_PROJECT_ID);
+
 // Firebase configuration - Replace with your own config
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "demo-api-key",
